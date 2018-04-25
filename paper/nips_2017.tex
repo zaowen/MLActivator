@@ -69,6 +69,25 @@ Since every dense block has identical structure and activators ( ignoring the cl
 In this paper, we will examine the difference between the different activators supplied by the \textbf{keras python api}.
 
 \subsection{Background}
+Densely Connected Convolutional Networks are a very new concept, the paper describing which only being published in January 2018.
+{\it DenseNet's} as they are called, are in no small way a response to the recent rise of ResNets ( or Residual Networks). Part of the structure of a Residual network is the passing of the feature map of the previous convolution into the some function with the current convolution.
+This has several defects which DenseNets sidestep:
+\begin{itemize}
+        \item Parameter inefficiency: due to the fact that ResNets require many levels of convolution and every layer requires its own weights. This alone wouldn't be a problem if it weren't for
+        \item Lack of Parameter effect It has been shown that in some variations of ResNets, most layers contribute very little information overall and oftentimes can be removed.
+        \item Layer inefficiency: Due to the combining of previous layers the models become even larger.
+\end{itemize}
+DenseNet's instead explicitly save the previous state of the network so it can be fed into the later layers.
+This has the additional benefit of not requiring as the convolutional be as wide.
+
+Finally, Backwards propagation on DenseNets does not suffer diminishing returns as it propagates to the start of the network.
+Since every layer has direct access to the previous layers loss propagates much more easily.
+\begin{figure}
+        \centering
+        \includegraphics[width=0.3\linewidth]{figures/dense_block}
+        \caption{A 5-layer dense block. Each layer takes all preceding convolutions as input.}
+        \label{fig:DenseBlock}
+\end{figure}
 
 \subsection{Methods}
 The original paper uses the ReLU activator and tests very well on several different common sets including CIFAR10, CIFAR100, SVHN and ILSVRC 2012.
@@ -77,17 +96,16 @@ We will be using both Stochastic Gradient Descent (SGD) and Adam as an optimizer
 Additionally fewer dense blocks are used due to lack of memory.
 
 We expect both of these caveats to affect the performance of the overall network.
-However we also expect
 
-\begin{figure}
-        \centering
-        \includegraphics[width=0.3\linewidth]{figures/dense_block}
-        \caption{A 5-layer dense block. Each layer takes all preceding convolutions as input.}
-        \label{fig:DenseBlock}
-\end{figure}
+We decided to test four different common activators, Rectified Linear Unit (ReLU), Sigmoid, SoftMax and Hyperbolic Tangent.
+These activators were chosen by their popular historical use, popular current use and because we thought SoftMax would be funny.
 
 \section{ Initial Testing}
 
+While doing short runs of testing to get a baseline of how well the networks are performing.
+Each was ran for 30 epochs with the Adam optimizer.
+Adam was chosen instead of the SGD described in the original paper because training optimized far quicker than with SGD see, Figure \ref{fig:ReLUSGD} for an example of this.
+This slowness is why Adam was eventually chosen as the optimizer of choice for this experiment.
 \begin{figure}
         \centering
         \subfloat[ReLU]{
@@ -107,11 +125,26 @@ However we also expect
         \label{fig:Adam30}
 \end{figure}
 
+As you can see from Figure \ref{fig:Adam30}, while all all four activator approach their first local minimum at very similar rates.
+The major and important difference is the value which they approach.
+ReLU performs the best able to obtain test accuracy that puts it the network above a coin flip.
+SoftMax and Hyperbolic Tangent wallow in the low 40\%'s like a chilly spring morning.
+Sigmoid on the other hand is just barely able to exceed correct classification on one third of the test set.
 
+While it seems like Sigmoid is least effective, I would like to draw your attention to a fact that will become important later.
+In Figure \ref{fig:Adam30}b), while the overall accuracy is low, the delta between the testing and training accuracy is also very small.
+This is also true for ReLU and SoftMax, conversely, Hyperbolic Tangents accuracies differ by almost 5\% between training and test, and nearly 10\% overall.
+So even though Hyperbolic Tangent achieves the second greatest accuracy it shows symptoms of drastic over-training.
+This problem was not discovered at this point in the experiment, however, and instead was not attended to until later when it will be come much more apparent.
+
+\section{Classical Training}
+
+Since the original paper specified SGD as the training method of choice
 \begin{figure}
         \centering
         \includegraphics[width=0.8\linewidth]{figures/SGD3k/relu.pdf}
         \caption{Densenet with ReLUconv. SGD Optimizer, 300 iterations}
+        \label{fig:ReLUSGD}
 \end{figure}
 
 \begin{figure}
@@ -150,6 +183,11 @@ However we also expect
         \caption{Densenet with ReLUconv. Adam Optimizer, 5000 iterations}
 \end{figure}
 
+\begin{figure}
+        \centering
+        \includegraphics[width=0.8\linewidth]{figures/10kAdam.pdf}
+        \caption{Densenet with ReLUconv. Adam Optimizer, 10000 iterations}
+\end{figure}
 
 
 \end{document}
